@@ -1,1 +1,1 @@
-select * fom customers
+select * from customers
