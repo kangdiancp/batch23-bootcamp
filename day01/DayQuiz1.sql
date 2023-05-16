@@ -55,10 +55,23 @@ on e.department_id = d.department_id
 group by d.department_id
 
 //nomor9
+select d.department_id, d.department_name, d.manager_id, count(*) as mutasi
+from departments d join employees e
+on d.department_id = e.department_id join job_history jh 
+on e.employee_id = jh.employee_id
+group by d.department_id
 
 //nomor10
+select j.job_title,count(*) as mutasi from jobs j
+join employees e on j.job_id = e.job_id
+join job_history jh on e.employee_id = jh.employee_id
+group by j.job_title
 
 //nomor11
+select j.job_title,count(*) as mutasi from jobs j
+join employees e on j.job_id = e.job_id
+join job_history jh on e.employee_id = jh.employee_id
+group by j.job_title
 
 //nomor12
 select j.job_title, count(employee_id)
