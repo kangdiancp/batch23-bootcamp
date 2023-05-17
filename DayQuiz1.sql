@@ -385,10 +385,9 @@ join job_history jh on e.employee_id = jh.employee_id
 group by j.job_title;
 
 //Nomor 11
-select jh.employee_id, count(*) as jumlah_muncul, fist_name
-from job_history as jh
-join employees as e on e.employee_id = jh.employee_id 
-group by jh.employee_id, fist_name
+select employee_id, count(*) as jumlah_muncul
+from job_history
+group by employee_id
 order by jumlah_muncul desc
 LIMIT 1;
 
@@ -410,43 +409,3 @@ join employees e on d.department_id = e.department_id
 group by d.department_name;
 
 //Nomor 15
-
-
-create or replace view total_employee_by_country as
-select t.country_name,t.city,d.department_id,d.department_name,count(employee_id)total_employee
-from employees as e, departments as d,
-(select r.region_id,region_name,c.country_id,country_name,city,l.location_id
-from regions as r, countries as c, locations as l
-where r.region_id = c.region_id
-and c.country_id = l.country_id) as t
-where e.department_id = d.department_id
-and d.location_id = t.location_id
-group by t.country_name,t.city,d.department_id,d.department_name
-
-select * from total_employee_by_country
-where city = 'London'
-
-select masa_kerja,sum(bonus)bonus_per_masa_kerja from (
-select employee_id,fist_name,last_name,salary, extract(year from age(now(),hire_date)) masa_kerja,
-case when extract(year from age(now(),hire_date)) >= 25 then salary * 5
-	when extract(year from age(now(),hire_date)) < 25 then salary * 2 end bonus
-from employees) as t
-group by masa_kerja order by masa_kerja
-
-
-select sum(mk_satu) "8 <= masa kerja <= 13",
-sum(mk_dua) "14 <= masa kerja  <= 17",
-sum(mk_tiga) "18 <= masa kerja <= 22"
-from (
-	select 
-		case when extract(year from age(now(),hire_date)) >= 8
-			and extract(year from age(now(),hire_date)) <= 13
-				then count(employees) end mk_satu,
-		case when extract(year from age(now(),hire_date)) > 13
-			and extract(year from age(now(),hire_date)) <= 17
-				then count(employees) end mk_dua,
-		case when extract(year from age(now(),hire_date)) > 17
-			and extract(year from age(now(),hire_date)) <= 22
-				then count(employees) end mk_tiga
-	from employees
-group by hire_date) as t
