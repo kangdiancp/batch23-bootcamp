@@ -1,0 +1,367 @@
+create table categories(
+	cateId serial primary key,
+	cateName varchar(25)
+);
+
+create table customers(
+    custId varchar(10) primary key,
+    custName varchar(35),
+    custAddress varchar(60),
+    custCity varchar(15),
+    custCountry varchar(15)
+);
+
+create table products(
+    prodId integer primary key,
+    prodName varchar(35),
+    prodPerUnit varchar(25),
+    prodPrice money,
+    prodStock smallint,
+    prodStockAvailable bit,
+    prodCateId integer,
+    foreign key (prodCateId) references categories(cateId)
+);
+
+create table orders(
+    orderName varchar(25) primary key,
+    orderCreated timestamp,
+    orderShipName varchar(40),
+    orderShipAddress varchar(60),
+    orderShipCity varchar(15),
+    orderShipCountry varchar(15),
+    orderQty smallint,
+    orderSubTotal money,
+    orderSubDiscount money,
+    orderTax money,
+    orderTotal money,
+    orderStatus varchar(15),
+    orderIdTemp integer,
+    orderCustId varchar(10),
+    foreign key (orderCustId) references customers(custId)
+);
+
+create table lineItems(
+    liteId serial primary key,
+    litePrice money,
+    liteQty smallint,
+    liteDiscount real,
+    liteProdId integer,
+    liteOrderName varchar(25),
+    foreign key (liteProdId) references products(prodId),
+    foreign key (liteOrderName) references orders(orderName)
+);
+
+create extension dblink;
+
+begin;
+declare s1 cursor for select * from dblink('localhost','select category_id, category_name from categories')
+as data(cateId integer, cateName varchar(40))
+fetch backward all from s1;
+commit;
+
+CREATE FOREIGN DATA WRAPPER POSTGRES;
+CREATE SERVER LOCALHOST FOREIGN DATA WRAPPER POSTGRES OPTIONS(hostaddr '127.0.0.1', dbname 'NorthwindDB');
+CREATE USER MAPPING FOR POSTGRES SERVER LOCALHOST OPTIONS (USER 'postgres', PASSWORD 'admin');
+
+SELECT DBLINK_CONNECT ('localhost')
+
+CREATE FUNCTION insert_load_categories(cateId integer, cateName varchar) RETURNS VOID AS $$
+BEGIN
+    -- Koneksi ke database Northwind
+    PERFORM dblink_connect('localhost', 'host=127.0.0.1 dbname=NortwindDB user=postgres password=admin');
+
+    -- Memindahkan data dari tabel Northwind ke tabel target di database SHOPPING
+    INSERT INTO shopping.categories (cateId, cateName)
+    SELECT category_id, category_name
+    FROM dblink('localhost', 'SELECT category_id, category_name FROM northwind.categories') AS s(category_id integer, category_name varchar);
+
+    -- Putuskan koneksi ke database Northwind
+    PERFORM dblink_disconnect('localhost');
+
+    COMMIT;
+END;
+$$ LANGUAGE plpgsql;
+
+select insert_load_categories
+
+--soal no 2.1 loadcategory
+create function get_category ()
+    returns table(
+        cateId integer,
+        cateName varchar
+    ) as $$
+declare
+    rec_emp record;
+begin
+        for rec_emp in select *
+        from dblink('localhost','select category_id,category_name from categories') as data(CateId integer,CateName varchar(15))
+    loop
+        cateId := rec_emp.cateId;
+		cateName := rec_emp.cateName;
+		insert into categories(cateId, cateName) values(rec_emp.cateId, rec_emp.cateName);
+		return next;
+		end loop;
+end;$$
+language plpgsql;
+
+--soal 2.1
+create function get_category ()
+    returns table( cateId integer, cateName varchar) as $$
+declare
+    rec_emp record;
+    cur_emp cursor
+        for select * from dblink('localhost','select category_id,category_name from categories') 
+		as data(CateId integer, CateName varchar(15));
+begin
+    open cur_emp;
+    loop
+        fetch cur_emp into rec_emp;
+        exit when not found;
+        cateID := rec_emp.cateId;
+        cateName := rec_emp.cateName;
+		insert into categories(cateId, cateName) values (rec_emp.cateID, rec_emp.cateName);
+        return next;
+        end loop;
+        close cur_emp;
+       
+end;$$
+language plpgsql;
+
+select get_category()
+select * from categories;
+
+--soal no 2.2 loadcustomer
+create or replace function get_customer()
+    returns table(
+        custId varchar,
+        custName varchar,
+		custAddress varchar,
+		custCity varchar,
+		custCountry varchar
+    ) as $$
+declare
+    rec_emp record;
+    cur_emp cursor
+        for select * from dblink('localhost','select customer_id, company_name, address, city, country from customers') 
+		as data(custId varchar(10), custName varchar(60), custAddress varchar(60), custCity varchar(30), custCountry varchar(30));
+begin
+    open cur_emp;
+    loop
+        fetch cur_emp into rec_emp;
+        exit when not found;
+		custId := rec_emp.custId;
+        custName := rec_emp.custName;
+		custAddress := rec_emp.custAddress;
+		custCity := rec_emp.custCity;
+		custCountry := rec_emp.custCountry;
+		insert into customers(custId, custName, custAddress, custCity, custCountry) values (rec_emp.custId, rec_emp.custName, rec_emp.custAddress, rec_emp.custCity, rec_emp.custCountry);
+        return next;
+        end loop;
+        close cur_emp;
+end;$$
+language plpgsql;
+
+select get_customer()
+select * from customers
+
+--soal no 2.3 loadproduct
+create function get_product()
+    returns table(
+        prodId integer,
+        prodName varchar,
+		prodPerUnit varchar,
+		prodPrice money,
+		prodStock integer,
+		prodStockAvailable bit,
+		prodCateId integer
+    ) as $$
+declare
+    rec_emp record;
+    cur_emp cursor
+        for select * from dblink('localhost','select product_id, product_name, quantity_per_unit, unit_price, units_in_stock, discontinued, category_id from products') 
+		as data(prodId integer, prodName varchar(60), prodPerUnit varchar(60), prodPrice money, prodStock integer, prodStockAvailable bit, prodCateId integer);
+begin
+    open cur_emp;
+    loop
+        fetch cur_emp into rec_emp;
+        exit when not found;
+		prodId := rec_emp.prodId;
+        prodName :=  rec_emp.prodName;
+		prodPerUnit := rec_emp.prodPerUnit;
+		prodPrice := rec_emp.prodPrice;
+		prodStock := rec_emp.prodStock;
+		prodStockAvailable := rec_emp.prodStockAvailable;
+		prodCateId := rec_emp.prodCateId;
+		insert into products(prodId, prodName, prodPerUnit, prodPrice, prodStock, prodStockAvailable, prodCateId) values (rec_emp.prodId, rec_emp.prodName, rec_emp.prodPerUnit, rec_emp.prodPrice, rec_emp.prodStock, rec_emp.prodStockAvailable, rec_emp.prodCateId);
+        return next;
+        end loop;
+        close cur_emp;
+end;$$
+language plpgsql;
+
+select get_product()
+select * from products
+
+
+--soal 2.4 loadorder
+
+CREATE SEQUENCE order_name
+INCREMENT 1
+MINVALUE 1
+MAXVALUE 9223372036854775807
+START 1
+
+create or replace function order_id () returns varchar as $$
+select CONCAT('ORD',to_char(now(),'YYYYMMDD'),'-',lpad(''||nextval('order_name'),4,'0'))
+$$ language sql
+
+ALTER TABLE orders
+ALTER COLUMN orderName SET DEFAULT CONCAT('ORD-', TO_CHAR(CURRENT_DATE, 'YYYYMMDD'), '-', nextval('order_name')),
+ALTER COLUMN orderName SET NOT NULL
+
+create function get_order()
+    returns table(ordercreated timestamp, ordershipname varchar, 
+				  ordershipaddress varchar, ordershipcity varchar, ordershipcountry varchar, 
+				  orderqty smallint,ordersubtotal money, ordersubdiscount money, ordertax money, 
+				  ordertotal money, orderstatus varchar,orderi	dtemp smallint,ordercustid varchar) as $$
+	
+declare
+    rec_emp record;
+    cur_emp cursor
+        for select * 
+		from dblink('localhost','select o.ship_name, o.ship_address, o.ship_city, 
+						o.ship_country, o.ship_region, o.order_id, o.customer_id, od.quantity, 
+						od.unit_price, od.discount from orders o join order_detail od on od.order_id = o.order_id')
+		as data(ordershipname varchar, ordershipaddress varchar, ordershipcity varchar, ordershipcountry varchar,
+				orderstatus varchar, orderidtemp smallint, ordercustid varchar, orderqty smallint, 
+				ordersubtotal money, ordersubdiscount money); 
+begin
+    open cur_emp;
+    loop
+        fetch cur_emp into rec_emp;
+        exit when not found;
+		orderCreated := now();
+		orderShipName := rec_emp.orderShipName;
+        orderShipAddress :=  rec_emp.orderShipAddress;
+		orderShipCity := rec_emp.orderShipCity;
+		orderShipCountry := rec_emp.orderShipCountry;
+		orderQty := rec_emp.orderQty;
+		orderSubTotal := rec_emp.orderSubTotal;
+		orderSubDiscount := rec_emp.orderSubDiscount;
+		orderTax := 0.1;
+		orderTotal := (ordersubtotal - ordersubdiscount) + ordertax;
+		CASE
+			WHEN rec_emp.orderstatus IS NULL
+				THEN orderstatus = 'NEW';
+			WHEN rec_emp.orderstatus = 'AK'
+				THEN orderstatus = 'CANCELLED';
+			WHEN rec_emp.orderstatus = 'OR'
+				then orderstatus = 'CLOSED';
+			ELSE orderstatus = 'SHIPPING';
+		END CASE;
+		orderIdTemp := rec_emp.orderIdTemp;
+		orderCustId := rec_emp.orderCustId;
+		insert into orders(ordercreated, ordershipname, ordershipaddress, ordershipcity, ordershipcountry, orderqty,ordersubtotal, ordersubdiscount, ordertax,ordertotal, orderstatus,orderidtemp, ordercustid) 
+        values (ordercreated, ordershipname, ordershipaddress, ordershipcity, ordershipcountry, orderqty,ordersubtotal, ordersubdiscount, ordertax,ordertotal, orderstatus, orderidtemp, ordercustid);return next;
+        end loop;
+        close cur_emp;
+end;$$
+language plpgsql;
+
+select get_order()
+select * from orders
+
+--soal no 2.5 loadlineitems
+
+create function get_lineitems()
+    returns table(
+        litePrice money,
+		liteQty integer,
+		liteDiscount real,
+		liteProdId integer,
+		liteOrderName varchar
+    ) as $$
+declare
+    rec_emp record;
+	orderid smallint;
+    cur_emp cursor
+        for select * from dblink('localhost','select order_id, unit_price, quantity, discount, product_id, order_id from order_detail') 
+		as data(unit_price money, quantity integer, discount real, product_id integer, orderid smallint);
+begin
+    open cur_emp;
+    
+	loop
+	    fetch cur_emp into rec_emp;
+        exit when not found;
+		litePrice := rec_emp.unit_price;
+        liteQty :=  rec_emp.quantity;
+		liteDiscount := rec_emp.discount;
+		liteProdId := rec_emp.product_id;
+		orderid := rec_emp.orderid;
+		select ordername from orders where orderidtemp = orderid into rec_data;
+		insert into lineitems( litePrice, liteQty, liteDiscount, liteProdId, liteOrderName) 
+		values (litePrice, liteQty, liteDiscount, liteProdId, rec_data.ordername);
+		return next;
+        end loop;
+        close cur_emp;
+end;$$
+language plpgsql;
+
+
+--------------------------------------
+create or replace function get_lineitems()
+    returns table(liteprice money, liteqty smallint, litediscount real, 
+				  liteprodid integer, liteordername varchar) as $$
+	
+declare
+    rec_data record;
+	orderid smallint;
+    rec_emp record;
+	
+    cur_emp cursor
+        for select * from dblink('localhost','select unit_price, quantity, discount,product_id, order_id from order_detail ') 
+		as data(unit_price money, quantity smallint, discount real, product_id integer, order_id smallint);
+begin
+    open cur_emp;
+
+    loop
+        fetch cur_emp into rec_emp;
+       
+        exit when not found;
+       
+        liteprice := rec_emp.unit_price;
+        liteqty:= rec_emp.quantity;
+        litediscount := rec_emp.discount;
+        liteprodid := rec_emp.product_id;
+		
+		orderid := rec_emp.order_id;
+		
+		select ordername from orders where orderidtemp = orderid into rec_data;
+		insert into lineitems(liteprice, liteqty, litediscount,  liteprodid, liteordername) 
+        values (liteprice, liteqty, litediscount,  liteprodid, rec_data.ordername);
+        return next;
+        end loop;
+        close cur_emp;
+end;$$
+language plpgsql;
+
+drop function get_lineitems()
+
+select get_lineitems()
+select * from lineitems
+
+----- clear table target---
+--soal no 2.6 delete tabel target--
+create or replace function delete_lineitems()
+    returns void as $$
+begin  
+    delete from lineitems;
+end;$$
+language plpgsql;
+select * from lineitems;
+select delete_lineitems()
+
+--soal no 2.7 getordername
+create or replace function getordername () returns varchar as $$
+select CONCAT('ORD',to_char(now(),'YYYYMMDD'),'-',lpad(''||nextval('order_name'),4,'0'))
+$$ language sql
