@@ -230,8 +230,12 @@ as data(category_id integer,category_name varchar(15),description text,picture b
 
 --INSERT products
 insert into sales.products (prod_id,prod_name,prod_quantity,prod_price,prod_in_stock,prod_on_order,prod_reorder_level,prod_discontinued,prod_cate_id,prod_supr_id)
-select * from dblink('localhost','select product_id,product_name,quantity_per_unit,unit_price,units_in_stock,units_on_order,reorder_level,discontinued, supplier_id,category_id from products')
-as data(product_id integer,product_name varchar(40),quantity_per_unit varchar(20),unit_price real,units_in_stock smallint,units_on_order smallint,reorder_level smallint,discontinued integer,supplier_id smallint,category_id smallint)
+select * from dblink('localhost','select product_id,product_name,quantity_per_unit,
+					 unit_price,units_in_stock,units_on_order,reorder_level,discontinued, 
+					 supplier_id,category_id from products')
+as data(product_id integer,product_name varchar(40),quantity_per_unit varchar(20),
+		unit_price real,units_in_stock smallint,units_on_order smallint,reorder_level smallint,
+		discontinued integer,supplier_id smallint,category_id smallint)
 
 --INSERT orders
 insert into sales.orders(order_id,order_date,order_required_date,order_shipped_date,
@@ -247,5 +251,7 @@ as data(order_id smallint,order_date date,required_date date,shipped_date date,f
 		
 --INSERT order_detail
 insert into sales.order_detail(order_order_id,order_prod_id,order_price,order_quantity,order_discount)
-select * from dblink('localhost','select order_id,product_id,unit_price,quantity,discount from order_detail')
-as data(order_id smallint,product_id smallint,unit_price real,quantity smallint,discount real)
+select * from dblink('localhost','select order_id,product_id,unit_price,
+					 quantity,discount from order_detail')
+as data(order_id smallint,product_id smallint,unit_price real,
+		quantity smallint,discount real)
