@@ -20,6 +20,7 @@ create table customer(
     CustCountry varchar(15)
 )
 
+
 create table orders(
     OrderName varchar(25) primary key,
     OrderCreated timestamp,

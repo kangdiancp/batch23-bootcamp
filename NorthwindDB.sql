@@ -15,6 +15,7 @@ create table supplier(
     homepage text
 )
 
+
 create table categories(
     category_id smallint primary key,
     category_name varchar(15),

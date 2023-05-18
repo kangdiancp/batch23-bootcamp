@@ -14,6 +14,7 @@ create table sales.shipper(
 	ship_phone varchar(24)
 )
 
+
 select * from dblink('localhost','select shipper_id,company_name,phone from shippers')
 as data(ship_id integer,ship_name varchar (40),ship_phone varchar(24))
 
