@@ -1,0 +1,14 @@
+day 2 migrate data between db
+
+create extension dblink
+create foreign data wrapper postgres;
+create server localhohst foreign data wrapper postgres options(hostaddr '127.0.0.1' dbname'NortwindDB'
+create user mapping for postgres server localhost options (user 'postgres',password 'admin');
+
+select dblink_connect ('localhost')
+
+insert into sales.shippers (ship_id,ship_name,ship_phone)
+select * from dblink('localhost','select shiper_id,company_name,phone from shippers')
+as data(ship_id integer, ship_name varchar (40), ship_phone varchar(24)
+
+select * from sales.shippers
